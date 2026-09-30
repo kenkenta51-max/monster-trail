@@ -1,5 +1,9 @@
 # MONSTER TRAIL
 
+![MONSTER TRAIL ポートフォリオ用サムネイル](public/monster-trail-portfolio-1600.jpg)
+
+ポートフォリオ用の正方形サムネイル（1600×1600px）: [軽量JPG](public/monster-trail-portfolio-1600.jpg) / [高画質PNG](public/monster-trail-portfolio-1600.png)。
+
 **ブラウザで遊ぶ:** https://kenkenta51-max.github.io/monster-trail/
 
 **キャラクターと技を見る:** https://kenkenta51-max.github.io/monster-trail/showcase.html
