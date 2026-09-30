@@ -4,4 +4,5 @@
 .creature-icon img{display:block;width:100%;height:100%;object-fit:contain}.monster-card .creature-icon:has(img){width:106px;height:106px;background:transparent;box-shadow:none;margin:0 auto 8px}.ally-card{bottom:calc(5% + 184px)}
 @media(max-width:600px){.monster-card .creature-icon:has(img){width:66px;height:76px}.ally-card{bottom:calc(3% + 225px)}}
 .atelier-link{position:absolute;bottom:106px;left:7%;font-size:11px;color:#d3edb8;border-bottom:1px solid #d3edb855;padding-bottom:5px}.atelier-link:hover{color:white}@media(max-height:760px){.atelier-link{bottom:73px;left:auto;right:5%}}@media(max-width:600px){.atelier-link{bottom:80px;left:6%;right:auto}}
+.player-link{bottom:76px}@media(max-height:760px){.player-link{bottom:47px}}@media(max-width:600px){.player-link{bottom:52px}}
 @media(prefers-reduced-motion:reduce){button,.hp-track>i,#transition{transition:none}}

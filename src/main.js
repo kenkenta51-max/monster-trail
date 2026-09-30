@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import './style.css';
 import { createWorld, createArena, SPOTS } from './world.js';
-import { makePerson, makeMonsterModel, animatePerson, animateMonster, createPortraits } from './models.js';
+import { makeMonsterModel, animateMonster, createPortraits } from './models.js';
+import { createPlayer, animatePlayer } from './player-model.js';
 import { SPECIES, makeMonster, maxHP, damage, effectiveness, captureChance, rewardXP, initialSave, validateSave, canOccupy } from './rules.js';
 import { playAttack } from './battle-effects.js';
 
@@ -30,7 +31,7 @@ let renderer, world, arena, player, companion, camera, portraits;
 try {
   renderer = new THREE.WebGLRenderer({ canvas: $('game'), antialias: true, powerPreference: 'high-performance' }); renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;
   world=createWorld();arena=createArena();portraits=createPortraits();camera=new THREE.PerspectiveCamera(47,innerWidth/innerHeight,.1,220);camera.position.set(5,19,30);
-  player=makePerson('#e68e76','#efc49f','player');player.position.set(save.position.x,.23,save.position.z);player.rotation.y=Math.PI;world.dynamic.add(player);if(!canOccupy(player.position.x,player.position.z,world.colliders))player.position.set(0,.23,15);
+  player=createPlayer();player.position.set(save.position.x,.23,save.position.z);player.rotation.y=Math.PI;world.dynamic.add(player);if(!canOccupy(player.position.x,player.position.z,world.colliders))player.position.set(0,.23,15);
   companion=makeMonsterModel(active().name);companion.scale.setScalar(.56);companion.position.copy(player.position).add(new THREE.Vector3(-1,0,1));world.dynamic.add(companion);
   $('start').disabled=false;$('start').firstElementChild.textContent=hasSave?'CONTINUE TRAIL':'START GAME';document.body.dataset.mode='title';
 } catch (error) { show('fatal',true);$('fatal-detail').textContent=error.message;throw error; }
@@ -114,7 +115,7 @@ function fieldUpdate(dt){
   let x=(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0),z=(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-(keys.has('KeyW')||keys.has('ArrowUp')?1:0);
   const len=Math.hypot(x,z);moving=len>0;let traveled=0;
   if(moving){x/=len;z/=len;const dx=x*Math.cos(cameraYaw)+z*Math.sin(cameraYaw),dz=z*Math.cos(cameraYaw)-x*Math.sin(cameraYaw);const speed=keys.has('ShiftLeft')||keys.has('ShiftRight')?7.7:4.5;const sx=dx*speed*dt,sz=dz*speed*dt;const ox=player.position.x,oz=player.position.z;if(canOccupy(ox+sx,oz,world.colliders))player.position.x+=sx;if(canOccupy(player.position.x,oz+sz,world.colliders))player.position.z+=sz;traveled=Math.hypot(player.position.x-ox,player.position.z-oz);moving=traveled>.0001;const angle=Math.atan2(dx,dz);player.rotation.y+=Math.atan2(Math.sin(angle-player.rotation.y),Math.cos(angle-player.rotation.y))*Math.min(1,dt*13);}
-  animatePerson(player,time*(keys.has('ShiftLeft')?1.35:1),moving);
+  animatePlayer(player,dt,time,moving,keys.has('ShiftLeft')||keys.has('ShiftRight'));
   const follow=player.position.clone().add(new THREE.Vector3(-Math.sin(player.rotation.y)*1.3+.75,0,-Math.cos(player.rotation.y)*1.3));
   if(canOccupy(follow.x,follow.z,world.colliders,.25))companion.position.lerp(follow,Math.min(1,dt*5));else companion.position.lerp(player.position,Math.min(1,dt*5));companion.rotation.y=player.rotation.y;animateMonster(companion,time,moving);
   nearNPC=null;let nearest=3.7;for(const npc of world.npcs){const distance=npc.model.position.distanceTo(player.position);if(distance<nearest){nearest=distance;nearNPC=npc;}}
@@ -138,4 +139,4 @@ frame();
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();arena.camera.aspect=innerWidth/innerHeight;arena.camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 window.addEventListener('pagehide',persist);
 // Read-only diagnostics help verify real input-driven gameplay and performance.
-window.monsterTrail = Object.freeze({ getState: () => ({ mode, player:{x:player.position.x,z:player.position.z}, area:spotNow?.name??null, nearNPC:nearNPC?.name??null, team:save.team.map(m=>({...m})), inventory:{potions:save.potions,prisms:save.prisms}, battle:battle?{enemy:{...battle.enemy},turn:battle.turn,busy:battle.busy,ended:battle.ended}:null, draws:renderer.info.render.calls, triangles:renderer.info.render.triangles, npcCount:world.npcs.length, camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z} }) });
+window.monsterTrail = Object.freeze({ getState: () => ({ mode, player:{x:player.position.x,z:player.position.z,model:player.userData.modelState,animation:player.userData.currentAction??'Idle'}, area:spotNow?.name??null, nearNPC:nearNPC?.name??null, team:save.team.map(m=>({...m})), inventory:{potions:save.potions,prisms:save.prisms}, battle:battle?{enemy:{...battle.enemy},turn:battle.turn,busy:battle.busy,ended:battle.ended}:null, draws:renderer.info.render.calls, triangles:renderer.info.render.triangles, npcCount:world.npcs.length, camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z} }) });
