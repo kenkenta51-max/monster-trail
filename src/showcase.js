@@ -1,0 +1,21 @@
+import * as THREE from 'three';
+import './showcase.css';
+import {createArena} from './world.js';
+import {makeMonsterModel,animateMonster} from './models.js';
+import {SPECIES} from './rules.js';
+import {playAttack,effectDiagnostics} from './battle-effects.js';
+const $=id=>document.getElementById(id);
+const renderer=new THREE.WebGLRenderer({canvas:$('stage'),antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1;
+const arena=createArena();let actor,target,current='Flamo',busy=false,seconds=0;
+// Leave an editorial margin for the profile while keeping both silhouettes readable.
+arena.camera.position.set(8,5.3,14);arena.camera.lookAt(-2,.9,0);arena.camera.fov=43;arena.camera.updateProjectionMatrix();
+for(const name of Object.keys(SPECIES)){const button=document.createElement('button');button.textContent=name;button.addEventListener('click',()=>choose(name));$('species').append(button);}
+function choose(name){if(busy)return;current=name;if(actor)arena.scene.remove(actor);if(target)arena.scene.remove(target);const other=name==='Flamo'?'Leafy':name==='Aquari'?'Flamo':'Aquari';actor=makeMonsterModel(name);target=makeMonsterModel(other);actor.scale.setScalar(1.8);target.scale.setScalar(1.65);actor.position.copy(arena.stages[0]);target.position.copy(arena.stages[1]);actor.rotation.y=1.15;target.rotation.y=-.35;arena.scene.add(actor,target);const s=SPECIES[name];$('name').textContent=name;$('type').textContent=`${s.label} / ${s.habitat}`;$('personality').textContent=s.personality;$('description').textContent=s.description;$('signature').textContent=s.silhouette;$('actor-label').textContent=name;$('target-label').textContent=other;[...$('species').children].forEach(b=>b.setAttribute('aria-pressed',String(b.textContent===name)));$('moves').replaceChildren();s.moves.forEach(move=>{const b=document.createElement('button');b.textContent=move.name;const info=document.createElement('small');info.textContent=move.description;b.append(info);b.addEventListener('click',()=>perform(move));$('moves').append(b);});}
+function disable(value){document.querySelectorAll('button,input').forEach(b=>b.disabled=value);}
+async function perform(move,inSuite=false){if(busy)return;busy=true;disable(true);$('status').textContent=`${current} の ${move.name}！`;$('result').textContent='予備動作 → 発動';const before=effectDiagnostics(),origin=actor.position.clone(),targetOrigin=target.position.clone();try{
+  await playAttack({scene:arena.scene,camera:arena.camera,attacker:actor,defender:target,move,speed:$('slow').checked?.2:1,onImpact:()=>{$('status').textContent=`${move.name} が命中！`;$('result').textContent='命中 → リアクション → 余韻';}});
+  const after=effectDiagnostics();if(after.impacts-before.impacts!==1||after.active!==0||arena.scene.children.some(o=>o.name.startsWith('VFX:'))||actor.position.distanceTo(origin)>1e-6||target.position.distanceTo(targetOrigin)>1e-6)throw new Error('VFX lifecycle validation failed');
+  $('status').textContent=`${move.name}：再生完了`;$('result').textContent='ポーズ復元・命中1回・エフェクト解放 ✓';return true;
+}catch(error){$('status').textContent='再生エラー';$('result').textContent=error.message;console.error(error);throw error;}finally{busy=false;if(!inSuite)disable(false);}}
+$('all').addEventListener('click',async()=>{if(busy)return;const passed=[];try{$('slow').checked=false;for(const[name,s]of Object.entries(SPECIES)){choose(name);for(const move of s.moves){await perform(move,true);passed.push(move.name);}}$('status').textContent='6つすべての技を確認しました';$('result').textContent='6 / 6 PASS · 残留エフェクト 0';document.body.dataset.suite='passed';}catch{document.body.dataset.suite='failed';}finally{disable(false);}});
+choose('Flamo');const clock=new THREE.Clock();function render(){requestAnimationFrame(render);const dt=Math.min(clock.getDelta(),.05);if(document.hidden)return;seconds+=dt;animateMonster(actor,seconds);animateMonster(target,seconds+1);renderer.render(arena.scene,arena.camera);}render();window.addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);arena.camera.aspect=innerWidth/innerHeight;arena.camera.updateProjectionMatrix();});
