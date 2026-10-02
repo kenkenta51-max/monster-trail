@@ -13,7 +13,7 @@ const fill=new THREE.DirectionalLight('#9dcfe0',1.3);fill.position.set(4,2,-3);s
 const floor=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.35,.23,64),new THREE.MeshStandardMaterial({color:'#326c70',roughness:.8}));floor.position.y=-.115;floor.receiveShadow=true;scene.add(floor);
 const rim=new THREE.Mesh(new THREE.TorusGeometry(2.2,.025,8,64),new THREE.MeshStandardMaterial({color:'#c5ebaa',emissive:'#a6d67e',emissiveIntensity:.3}));rim.rotation.x=Math.PI/2;rim.position.y=.01;scene.add(rim);
 const camera=new THREE.PerspectiveCamera(35,1,.1,50);
-let yaw=.33,pitch=.09,distance=5.5,dragging=false,lastX=0,lastY=0,mixer,actions,current='Idle';
+let yaw=.33,pitch=.09,distance=4.9,dragging=false,lastX=0,lastY=0,mixer,actions,current='Idle';
 function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
 addEventListener('resize',resize);resize();
 canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId);});
