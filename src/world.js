@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { box, orb, cylinder, mat, makePerson, makeMonsterModel, animatePerson, animateMonster } from './models.js';
+import { box, orb, cylinder, mat, makeMonsterModel, animateMonster } from './models.js';
+import { makeNPCModel, animateNPCModel } from './npc-models.js';
 import { canOccupy } from './rules.js';
 
 export const SPOTS = [
@@ -131,7 +132,7 @@ export function createWorld() {
     const glow = new THREE.Mesh(new THREE.CircleGeometry(1.5, 20), new THREE.MeshBasicMaterial({ color: '#fff0ab', transparent:true, opacity:.075, depthWrite:false })); glow.rotation.x = -Math.PI / 2; glow.position.set(x + .5, .25, z); dynamic.add(glow);
   }
   for (let i = 0; i < 5; i++) { const car = new THREE.Group(); box(car, ['#e3b690','#83bab7','#bca4bf','#e0d6b8','#87a4bd'][i], 0, .65, 0, 3.1, .7, 1.5); box(car, '#73939d', -.1, 1.15, 0, 1.7, .63, 1.3); for (const x of [-1,1]) for (const z of [-.7,.7]) { const wheel = cylinder(car, '#26394a', x, .3, z, .32, .32, .16); wheel.rotation.x = Math.PI / 2; } for (const z of [-.43,.43]) box(car, '#fff0ae', 1.57, .65, z, .04, .19, .31, true); car.position.set(i * 20 - 44, .12, -36 + (i % 2 ? -2 : 2)); dynamic.add(car); cars.push(car); }
-  const npcs = NPC_INFO.map((v, i) => { const [name, x, z, color, accessory, text] = v; const model = makePerson(color, ['#e6b88d','#c68e74','#edc7a6'][i % 3], accessory); model.position.set(x, .23, z); model.rotation.y = i % 2 ? Math.PI * .75 : -.6; dynamic.add(model); const npc = { name, model, text, home: new THREE.Vector3(x, .23, z), roaming: [1,2,3,6,7,11].includes(i), phase: i * 1.4, role: accessory }; if (accessory === 'dog') { const dog = new THREE.Group(); orb(dog, '#deb180', 0, .4, 0, .35, .25, .52); orb(dog, '#f1c99b', 0, .67, .34, .26); for (const xx of [-.22,.22]) { box(dog, '#c89d73', xx, .2, .22, .09, .3, .1); box(dog, '#c89d73', xx, .2, -.26, .09, .3, .1); } dog.position.set(1, 0, .2); model.add(dog); } return npc; });
+  const npcs = NPC_INFO.map((v, i) => { const [name, x, z, color, accessory, text] = v; const model = makeNPCModel(i, color, ['#e6b88d','#c68e74','#edc7a6'][i % 3]); model.position.set(x, .23, z); model.rotation.y = i % 2 ? Math.PI * .75 : -.6; dynamic.add(model); const npc = { name, model, text, home: new THREE.Vector3(x, .23, z), roaming: [1,2,3,6,7,11].includes(i), phase: i * 1.4, role: accessory }; if (accessory === 'dog') { const dog = new THREE.Group(); orb(dog, '#deb180', 0, .4, 0, .35, .25, .52); orb(dog, '#f1c99b', 0, .67, .34, .26); for (const xx of [-.22,.22]) { box(dog, '#c89d73', xx, .2, .22, .09, .3, .1); box(dog, '#c89d73', xx, .2, -.26, .09, .3, .1); } dog.position.set(1, 0, .2); model.add(dog); } return npc; });
   // Holographic encounter beacons, with visible original creatures.
   for (const spot of SPOTS) {
     const group = new THREE.Group(); group.position.set(spot.x, .29, spot.z); dynamic.add(group);
@@ -153,7 +154,7 @@ export function createWorld() {
     trees.forEach((tree,i) => tree.rotation.z = Math.sin(t * .8 + i) * .024);
     signals.forEach((dots,i)=>dots.forEach((m,j)=>{const on = j === (Math.floor(t / 7 + (i % 2)) % 2 ? 0 : 2); m.material.emissiveIntensity = on ? 2 : .03; m.material.color.setScalar(on ? 1 : .27);}));
     cars.forEach((car,i)=>{ car.position.x += dt * (i % 2 ? -5 : 5); car.rotation.y = i % 2 ? Math.PI : 0; if (car.position.x > 52) car.position.x = -52; if (car.position.x < -52) car.position.x = 52; });
-    npcs.forEach(n=>{if(n.roaming){const nx=n.home.x+Math.sin(t*.25+n.phase)*2, nz=n.home.z+Math.cos(t*.25+n.phase)*2; const dx=nx-n.model.position.x,dz=nz-n.model.position.z;if(canOccupy(nx,nz,colliders)){n.model.position.set(nx,.23,nz);if(Math.abs(dx)+Math.abs(dz)>.001)n.model.rotation.y=Math.atan2(dx,dz);}}animatePerson(n.model,t+n.phase,n.roaming);});
+    npcs.forEach(n=>{if(n.roaming){const nx=n.home.x+Math.sin(t*.25+n.phase)*2, nz=n.home.z+Math.cos(t*.25+n.phase)*2; const dx=nx-n.model.position.x,dz=nz-n.model.position.z;if(canOccupy(nx,nz,colliders)){n.model.position.set(nx,.23,nz);if(Math.abs(dx)+Math.abs(dz)>.001)n.model.rotation.y=Math.atan2(dx,dz);}}animateNPCModel(n.model,t,n.roaming);});
     beacons.forEach(b=>{b.particles.forEach((m,i)=>{const a=t*.2+i*Math.PI*2/9; m.position.set(Math.cos(a)*b.spot.r, .4+Math.sin(t+i)*.35, Math.sin(a)*b.spot.r);m.rotation.y=t;});animateMonster(b.monster,t);b.monster.rotation.y=t*.15;});
     billboards.forEach((m,i)=>m.material.emissiveIntensity=.45+Math.sin(t*.6+i)*.12);
     titleFriends.visible=title; titleFriends.children.forEach((m,i)=>animateMonster(m,t+i));
