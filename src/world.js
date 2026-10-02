@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { box, orb, cylinder, mat, makeMonsterModel, animateMonster } from './models.js';
 import { makeNPCModel, animateNPCModel } from './npc-models.js';
+import { streetSurface } from './city-surfaces.js';
 import { canOccupy } from './rules.js';
 
 export const SPOTS = [
@@ -47,8 +48,13 @@ export function createWorld() {
   box(fixed, '#91a8a5', 0, -.38, 0, 102, .65, 102);
   box(fixed, '#435368', 0, -.02, 0, 17.4, .14, 99); box(fixed, '#435368', 0, -.015, 0, 99, .14, 17.4);
   box(fixed, '#465469', 0, .01, -36, 99, .1, 9);
+  streetSurface(fixed, 'road', 0, .052, 0, 17.4, 99);
+  streetSurface(fixed, 'road', 0, .053, 0, 99, 17.4);
+  streetSurface(fixed, 'road', 0, .063, -36, 99, 9);
   for (const n of [-1, 1]) {
     box(fixed, '#d7d4be', n * 10.8, .08, 0, 4.1, .28, 94); box(fixed, '#d7d4be', 0, .09, n * 10.8, 94, .28, 4.1);
+    streetSurface(fixed, 'paving', n * 10.8, .222, 0, 4.08, 94);
+    streetSurface(fixed, 'paving', 0, .232, n * 10.8, 94, 4.08);
     box(fixed, '#eff0d4', n * 8.8, .15, 0, .18, .21, 96); box(fixed, '#eff0d4', 0, .15, n * 8.8, 96, .21, .18);
     for (let j = -43; j <= 43; j += 3) { if (Math.abs(j) > 13) { box(fixed, '#dfd4ad', n * .18, .065, j, .1, .02, 1.4); box(fixed, '#dfd4ad', j, .07, n * .18, 1.4, .02, .1); } }
     for (let j = -39; j < 40; j += 2) { box(fixed, '#a6b6aa', n * 10.8, .231, j, 4, .014, .045); box(fixed, '#a6b6aa', j, .232, n * 10.8, .045, .014, 4); }
@@ -56,16 +62,57 @@ export function createWorld() {
   // Zebra crossings plus two diagonal pedestrian routes.
   for (const n of [-1, 1]) for (let j = -7; j <= 7; j += 1.3) { box(fixed, '#f5efdc', j, .091, n * 6.7, .73, .026, 3.1); box(fixed, '#f5efdc', n * 6.7, .092, j, 3.1, .026, .73); }
   for (const direction of [-1, 1]) for (let j = -6; j <= 6; j += 1.2) { const stripe = box(fixed, '#f1ead5', j, .097, j * direction, 2.4, .026, .57); stripe.rotation.y = direction * Math.PI / 4; }
+  // Raised tactile paving marks each crossing without changing movement rules.
+  for (const n of [-1, 1]) {
+    box(fixed, '#c7b67c', 0, .24, n * 9.05, 5.7, .03, .72);
+    box(fixed, '#c7b67c', n * 9.05, .24, 0, .72, .03, 5.7);
+    for (let i = -6; i <= 6; i++) for (let j = -1; j <= 1; j++) {
+      box(fixed, '#ead99d', i * .4, .263, n * 9.05 + j * .19, .13, .022, .1);
+      box(fixed, '#ead99d', n * 9.05 + j * .19, .263, i * .4, .1, .022, .13);
+    }
+  }
   function building(x, z, w, d, h, color, name = '', accent = '#9ecfca') {
     solid(x, z, w, d); buildings.push({ x, z, w, d, h });
-    box(fixed, color, x, h / 2, z, w, h, d); box(fixed, '#d6d6c8', x, h + .25, z, w + .35, .5, d + .35); box(fixed, '#8a9ba3', x, h + .9, z, w * .4, 1, d * .35);
-    box(fixed, '#344a5d', x, 1.9, z + d / 2 + .03, w - .4, 3.2, .09);
+    box(fixed, color, x, h / 2, z, w, h, d);
+    box(fixed, '#d6d6c8', x, h + .25, z, w + .35, .5, d + .35);
+    box(fixed, '#8a9ba3', x, h + .9, z, w * .4, 1, d * .35);
+    // Setback retail frontage, mullions and a projecting weather canopy.
+    box(fixed, '#283e4e', x, 1.85, z + d / 2 + .035, w - .52, 3.18, .09);
+    box(fixed, '#73959a', x, 3.55, z + d / 2 + .42, w + .28, .16, .9);
+    box(fixed, '#c6cfca', x, 3.43, z + d / 2 + .81, w + .18, .045, .065);
+    for (let xx = x - w / 2 + 1.25; xx < x + w / 2 - .25; xx += 2.2) {
+      box(fixed, Math.round(xx) % 2 ? '#597b83' : '#6c8e94', xx + .4, 1.8, z + d / 2 + .095, 1.94, 2.67, .035);
+      box(fixed, '#c6d1c4', xx + .72, 2.18, z + d / 2 + .13, .22, .9, .015);
+      box(fixed, '#a9b9af', xx + .16, .96, z + d / 2 + .14, .62, .055, .08);
+      box(fixed, '#8ca4a8', xx, 1.8, z + d / 2 + .11, .085, 2.7, .12);
+      box(fixed, '#8ca4a8', xx + .6, 1.8, z + d / 2 + .11, .035, 2.7, .12);
+      box(fixed, '#b6d2d0', xx + .4, 2.25, z + d / 2 + .18, .3, 1.05, .025);
+    }
+    box(fixed, '#9eb9b4', x, .44, z + d / 2 + .13, w - .5, .09, .19);
+    box(fixed, '#344e58', x + w * .24, 1.55, z + d / 2 + .18, 1.15, 2.1, .055);
+    box(fixed, '#d4dcce', x + w * .24 + .39, 1.4, z + d / 2 + .23, .05, .18, .02);
+    // Floor plates and slender corner piers add depth to each silhouette.
+    for (let yy = 3.72; yy < h - .4; yy += 2.5) {
+      box(fixed, '#b9c7c4', x, yy, z + d / 2 + .11, w + .08, .115, .24);
+      box(fixed, '#b9c7c4', x + w / 2 + .11, yy, z, .24, .115, d + .12);
+      box(fixed, '#b9c7c4', x - w / 2 - .11, yy, z, .24, .115, d + .12);
+    }
+    for (const side of [-1, 1]) {
+      box(fixed, '#aebfbd', x + side * (w / 2 - .12), h / 2, z + d / 2 + .09, .18, h, .2);
+      box(fixed, '#667f89', x + side * (w / 2 + .06), h / 2, z, .12, h, d);
+    }
     for (let xx = x - w / 2 + 1; xx < x + w / 2; xx += 1.6) for (let yy = 4.7; yy < h - .9; yy += 2.5) {
       const lit = (Math.round(xx * 7 + yy * 3) % 4) !== 0; const c = lit ? accent : '#3f6075';
-      box(fixed, c, xx, yy, z + d / 2 + .06, .88, 1.28, .1, lit);
-      box(fixed, c, xx, yy, z - d / 2 - .06, .88, 1.28, .1, lit);
+      box(fixed, '#304858', xx, yy, z + d / 2 + .075, 1.04, 1.46, .12);
+      box(fixed, c, xx, yy, z + d / 2 + .15, .82, 1.22, .035, lit && Math.round(xx + yy) % 5 === 0);
+      box(fixed, '#d7e2d8', xx - .29, yy + .42, z + d / 2 + .172, .055, .28, .014);
+      box(fixed, '#a5b8b8', xx, yy - .76, z + d / 2 + .18, 1.1, .075, .23);
+      box(fixed, c, xx, yy, z - d / 2 - .06, .88, 1.28, .1, lit && Math.round(xx) % 4 === 0);
     }
     for (let zz = z - d / 2 + 1; zz < z + d / 2; zz += 1.7) for (let yy = 4.7; yy < h - .9; yy += 2.5) { const c = Math.round(zz + yy) % 4 ? accent : '#45667a'; for (const n of [-1, 1]) box(fixed, c, x + n * (w / 2 + .06), yy, zz, .1, 1.28, .95, true); }
+    // A few roof services keep the skyline from ending in identical rectangles.
+    box(fixed, '#667b83', x - w * .24, h + .7, z - d * .16, w * .18, .9, d * .2);
+    for (const side of [-1, 1]) cylinder(fixed, '#b7c5c2', x + side * w * .29, h + .34, z - d * .25, .06, .06, .7);
     if (name) billboards.push(sign(fixed, name, x, h * .67, z + d / 2 + .15, w * .88, Math.min(4.5, h * .3), color === '#d09caa' ? '#9b5067' : '#324d69', '#f2ecca', 0, 'NIJIMACHI · CITY LIFE'));
   }
   building(-21, -23, 13, 14, 24, '#718bac', '虹街', '#b6dcca');
@@ -86,6 +133,20 @@ export function createWorld() {
   building(43, 0, 8, 13, 30, '#829eae', 'NIJI', '#c8e3ca');
   for (const side of [-1, 1]) for (let k = 0; k < 5; k++) { const h = 22 + (k * 11 % 24); box(fixed, ['#728899', '#8295a9', '#a9a8b7'][k % 3], side * (53 + k * 7), h / 2 - 1, -24 - k * 10, 9, h, 11); }
   for (let i = 0; i < 9; i++) { const x = (i - 4) * 10, h = 20 + (i * 13 % 24); box(fixed, ['#7e96aa','#9bacc0','#869dad'][i%3], x,h/2,-66,8,h,12); for(let y=3;y<h-1;y+=3) for(let xx=-2;xx<=2;xx+=2) box(fixed,'#c5dbc2',x+xx,y,-59.95,.7,1.1,.08,true); }
+  // Road infrastructure at walking scale: stop bars, service covers and drains.
+  for (const n of [-1, 1]) {
+    box(fixed, '#e7e7dc', 0, .084, n * 13.2, 12.8, .018, .24);
+    box(fixed, '#e7e7dc', n * 13.2, .084, 0, .24, .018, 12.8);
+    for (const p of [-30, -21, 20, 31]) {
+      box(fixed, '#33485a', n * 8.22, .078, p, .32, .018, .8);
+      for (let j = -2; j <= 2; j++) box(fixed, '#82939b', n * 8.22, .091, p + j * .13, .24, .012, .025);
+    }
+  }
+  for (const [x,z] of [[-4.7,-22],[5.2,24],[-25,-5],[27,4]]) {
+    cylinder(fixed, '#304455', x, .078, z, .55, .55, .024, 32);
+    cylinder(fixed, '#71828a', x, .093, z, .41, .41, .012, 32);
+    for (let i = -2; i <= 2; i++) box(fixed, '#526774', x + i * .13, .102, z, .032, .006, .57);
+  }
   // Original commercial signage: no real businesses or city assets.
   sign(fixed, 'NEON / DAYS', -21, 16, -15.86, 10.7, 5.4, '#e98b70', '#fff3cb', 0, 'きょうも、いい寄り道。');
   sign(fixed, '✦', 20, 17, -21.86, 9.8, 7, '#4b8498', '#d9f2a3', 0, 'FIND YOUR LITTLE WONDER');
@@ -96,6 +157,15 @@ export function createWorld() {
   sign(fixed, 'cafe komorebi', -23, 3.25, -12.19, 10.5, 1.3, '#397c74', '#f9e7bb');
   for (let i = 0; i < 10; i++) box(fixed, i % 2 ? '#f4deaf' : '#76a39b', -27.5 + i, 2.48, -11.8, .96, .17, 1.2);
   for (const x of [-26, -23, -20]) box(fixed, '#90c8c4', x, 1.22, -12.18, 2.25, 1.95, .04, true);
+  for (const x of [-25.5, -20.5]) {
+    cylinder(fixed, '#b58b67', x, .77, -9.7, .57, .57, .1, 28);
+    cylinder(fixed, '#536d72', x, .49, -9.7, .055, .075, .48);
+    for (const side of [-1, 1]) {
+      box(fixed, '#55747a', x + side * .93, .48, -9.7, .45, .08, .48);
+      box(fixed, '#55747a', x + side * 1.12, .72, -9.7, .08, .48, .46);
+    }
+    solid(x, -9.7, 2.7, 1.25);
+  }
   // Station gateway at the edge of the plaza.
   box(fixed, '#4d7785', 22, 1.8, -22, 9, 3.6, 2); solid(22, -22, 9, 2);
   box(fixed, '#172e43', 22, 1.4, -20.95, 7, 2.8, .12);
@@ -109,8 +179,18 @@ export function createWorld() {
   for (const x of [-19.6, -16.4]) cylinder(fixed, '#465d50', x, .8, 13, .07, .07, 1.6);
   function tree(x, z, scale = 1) {
     cylinder(fixed, '#877465', x, 1.1 * scale, z, .14 * scale, .25 * scale, 2.2 * scale); solid(x, z, .5 * scale, .5 * scale);
+    for (const side of [-1, 1]) {
+      const branch = cylinder(fixed, '#877465', x + side * .25 * scale, 2.14 * scale, z, .06 * scale, .1 * scale, .66 * scale);
+      branch.rotation.z = -side * .67;
+    }
     const crown = new THREE.Group(); crown.position.set(x, 2.3 * scale, z); crown.scale.setScalar(scale); dynamic.add(crown);
-    orb(crown, '#6eab82', 0, .5, 0, 1.05, 1.25, 1); orb(crown, '#90c790', .45, 1.05, .13, .77, .86, .85); orb(crown, '#78b887', -.5, .65, -.16, .75, .85, .82); trees.push(crown);
+    orb(crown, '#668e76', 0, .47, 0, .82, .95, .8);
+    for (const [cx,cy,cz,sx,sy,sz,color] of [
+      [-.54,.67,.03,.5,.64,.55,'#7eae84'],[.46,.83,.1,.55,.67,.56,'#90bd8c'],
+      [0,1.23,-.08,.56,.55,.52,'#89b782'],[-.2,.43,.47,.55,.54,.43,'#709f78'],
+      [.48,.38,-.36,.47,.52,.46,'#79aa7d'],[-.4,1.08,-.33,.44,.48,.42,'#9ac492'],
+    ]) orb(crown,color,cx,cy,cz,sx,sy,sz);
+    trees.push(crown);
     box(fixed, '#768a80', x, .25, z, 1.5 * scale, .4, 1.5 * scale);
   }
   for (const p of [[-28,16],[-28,24],[-15,28],[-24,28],[-29,29],[-12,20],[-11,-30],[11,24],[11,34],[30,11],[13,-16],[-30,11],[-12,-2],[12,0],[-11,36],[32,-12]]) tree(...p, p[0] < -14 && p[1] > 12 ? 1.2 : .85);
