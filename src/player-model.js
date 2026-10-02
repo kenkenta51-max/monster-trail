@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { animatePerson, makePerson } from './models.js';
 
-const ASSET = `${import.meta.env.BASE_URL}models/trail-runner.glb`;
+const ASSET = `${import.meta.env.BASE_URL}models/trail-runner.glb?v=2`;
 
 export function createPlayer() {
   const root = new THREE.Group();

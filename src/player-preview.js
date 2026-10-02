@@ -20,7 +20,7 @@ canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.
 canvas.addEventListener('pointermove',e=>{if(!dragging)return;yaw+=(e.clientX-lastX)*.008;pitch=Math.max(-.34,Math.min(.58,pitch+(e.clientY-lastY)*.006));lastX=e.clientX;lastY=e.clientY;});
 canvas.addEventListener('pointerup',()=>dragging=false);canvas.addEventListener('lostpointercapture',()=>dragging=false);
 canvas.addEventListener('wheel',e=>{e.preventDefault();distance=Math.max(3.1,Math.min(8.8,distance+Math.sign(e.deltaY)*.35));},{passive:false});
-new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}models/trail-runner.glb`).then(gltf=>{
+new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}models/trail-runner.glb?v=2`).then(gltf=>{
   gltf.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});scene.add(gltf.scene);
   mixer=new THREE.AnimationMixer(gltf.scene);actions=Object.fromEntries(gltf.animations.map(clip=>[clip.name,mixer.clipAction(clip)]));actions.Idle.play();
 }).catch(error=>{console.error(error);document.querySelector('#error').style.display='block';});
